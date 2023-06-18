@@ -27,6 +27,8 @@ import configargparse
 import prop_ideal
 import utils
 import torch.nn as nn
+
+from load_nyu_depth_v2_labeled import NYU_Depth_V2_Labeled_Dataset
 # import params
     
 
@@ -41,7 +43,8 @@ def main():
     # opt.prop_dists_from_wrp = [-0.0044, -0.0032000000000000006, -0.0024000000000000002, -0.0010000000000000005, 0.0, 0.0013, 0.0028000000000000004, 0.0037999999999999987]
     # opt.virtual_depth_planes = [0.0, 0.08417508417508479, 0.14124293785310726, 0.24299599771297942, 0.3171856978085348, 0.4155730533683304, 0.5319148936170226, 0.6112104949314254]
     opt.prop_dists_from_wrp = [-0.0044, 0.0, 0.0037999999999999987]
-    opt.virtual_depth_planes = [0, 0.5, 1]
+    opt.virtual_depth_planes = [0, 0.5, 1] # for Washington scene v2
+    # opt.virtual_depth_planes = [1, 3.5, 5.5] # for NYU depth labeled
     opt.wavelength = 5.177e-07
     opt.feature_size = (6.4e-06, 6.4e-06)
     opt.F_aperture = 0.5
@@ -52,13 +55,14 @@ def main():
     scene_list = ['scene_01', 'scene_02', 'scene_03', 'scene_04', 'scene_05', 'scene_06', 'scene_07', 
                 'scene_08', 'scene_09', 'scene_10', 'scene_11', 'scene_12', 'scene_13', 'scene_14']
     dir_list = [os.path.join(root_dir, scene_name) for scene_name in scene_list]
-    opt.data_path = dir_list
+    
+    opt.data_path = dir_list # '/media/datadrive/NYU_Depth_V2/nyu_depth_v2_labeled.mat' #  
     opt.shuffle = True
-    opt.num_of_samples = 1000
+    opt.num_of_samples = 10
     # output
-    opt.output_type = 'tensor' # chose from 'image' or 'tensor'
+    # opt.output_type = 'image' # chose from 'image' or 'tensor'
     opt.out_path = './phases_images_masks'
-    run_id = 'Washington_scene_v2_1000samples'
+    run_id = 'Washington_scene_v2_10samples' # 'NYU_labeled_10samples' # 
     
     # image resolution related
     opt.channel = 1
@@ -67,7 +71,7 @@ def main():
     opt.slm_res = (480, 640) # (1080, 1920)
     
     # optimizer related
-    opt.num_iters = 1000
+    opt.num_iters = 5000
     opt.loss_fn = nn.functional.mse_loss
     opt.lr = 0.01
     opt.init_phase_range = 1.0
@@ -99,6 +103,8 @@ def main():
                                       crop_to_roi=False, shuffle=opt.shuffle,
                                       virtual_depth_planes=opt.virtual_depth_planes,
                                       )
+    
+    # img_loader = NYU_Depth_V2_Labeled_Dataset(opt.data_path, opt.virtual_depth_planes)
 
     for i, target in tqdm(enumerate(img_loader), total=opt.num_of_samples):
         
@@ -136,27 +142,27 @@ def main():
                 os.makedirs(os.path.join(out_path, i))
         
         
-        if opt.output_type == 'image':
-            # save phase_out as image
-            phase_out_path = os.path.join(out_path, 'phase', f'{target_idx}.png')
-            imageio.imwrite(phase_out_path, phase_out)
-            # save images as image
-            image_out_path = os.path.join(out_path, 'image', f'{target_idx}.png')
-            imageio.imwrite(image_out_path, target_amp.squeeze().cpu())
-            # save masks as #target_planes images
-            for i, mask_i in enumerate(target_mask.squeeze()):
-                mask_out_path = os.path.join(out_path, 'mask', f'{target_idx}-{i}.png')
-                imageio.imwrite(mask_out_path, mask_i.cpu())
-        elif opt.output_type == 'tensor':
-            # save final_phase as pytorch tensor for reload
-            phase_out_path = os.path.join(out_path, 'phase', f'{target_idx}.pt')
-            torch.save(final_phase, phase_out_path)
-            # save images as pytorch tensor
-            image_out_path = os.path.join(out_path, 'image', f'{target_idx}.pt')
-            torch.save(target_amp, image_out_path)
-            # save masks as pytorch tensor
-            mask_out_path = os.path.join(out_path, 'mask', f'{target_idx}.pt')
-            torch.save(target_mask, mask_out_path)
+        # if opt.output_type == 'image':
+        # save phase_out as image
+        phase_out_path = os.path.join(out_path, 'phase', f'{target_idx}.png')
+        imageio.imwrite(phase_out_path, phase_out)
+        # save images as image
+        image_out_path = os.path.join(out_path, 'image', f'{target_idx}.png')
+        imageio.imwrite(image_out_path, target_amp.squeeze().cpu())
+        # save masks as #target_planes images
+        for i, mask_i in enumerate(target_mask.squeeze()):
+            mask_out_path = os.path.join(out_path, 'mask', f'{target_idx}-{i}.png')
+            imageio.imwrite(mask_out_path, mask_i.cpu())
+        # elif opt.output_type == 'tensor':
+        # save final_phase as pytorch tensor for reload
+        phase_out_path = os.path.join(out_path, 'phase', f'{target_idx}.pt')
+        torch.save(final_phase, phase_out_path)
+        # save images as pytorch tensor
+        image_out_path = os.path.join(out_path, 'image', f'{target_idx}.pt')
+        torch.save(target_amp, image_out_path)
+        # save masks as pytorch tensor
+        mask_out_path = os.path.join(out_path, 'mask', f'{target_idx}.pt')
+        torch.save(target_mask, mask_out_path)
             
         
 

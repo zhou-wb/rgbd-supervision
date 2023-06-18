@@ -2,7 +2,8 @@ import os, shutil, random
 from image_loader import get_image_filenames
 from tqdm import tqdm
 
-root_dir = 'phases_images_masks/Washington_scene_v2_1000samples'
+# root_dir = 'phases_images_masks/NYU_labeled_10samples' # 'phases_images_masks/Washington_scene_v2_1000samples'
+root_dir = '/media/datadrive/img_mask_phase/FlyingThings3D'
 target_dir = root_dir
 shuffle = True
 
